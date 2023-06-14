@@ -1,7 +1,7 @@
 var canvas;
 var gl;
 
-var numTimesToSubdivide = 5;
+var numTimesToSubdivide = 0;
 
 var index = 0;
 
@@ -66,7 +66,6 @@ function triangle(a, b, c) {
 function onkeypress(event){
     if(event.key === "q"){
         if(numTimesToSubdivide !== 0) {
-            console.log("tried");
             numTimesToSubdivide-=1;
         }
     }
@@ -74,6 +73,11 @@ function onkeypress(event){
         if(numTimesToSubdivide !== 5)
             numTimesToSubdivide+=1;
     }
+
+    pointsArray = [];
+    normalsArray = [];
+    flatShadingArray = [];
+    setup();
 }
 
 
@@ -106,11 +110,12 @@ function square(a, b, c, d, n) {
     divideTriangle(a, d, b, n);
     divideTriangle(a, c, d, n);
 }
+window.addEventListener('keypress',onkeypress,false);
 
-window.onload = function init() {
+window.onload =
+    function init() {
 
     canvas = document.getElementById( "gl-canvas" );
-    window.addEventListener('keypress',onkeypress,false);
     gl = WebGLUtils.setupWebGL( canvas,undefined);
     if ( !gl ) { alert( "WebGL isn't available" ); }
 
@@ -119,19 +124,18 @@ window.onload = function init() {
 
     gl.enable(gl.DEPTH_TEST);
 
+   setup();
+
+    render();
+}
+function setup(){
     //
     //  Load shaders and initialize attribute buffers
     //
     var program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
 
-
-    square(va, vb, vc, vd, numTimesToSubdivide);
-    square(ve,vf,vg,vh,numTimesToSubdivide);
-    square(ve,vf,vd,vb,numTimesToSubdivide);
-    square(ve,vh,vd,va,numTimesToSubdivide);
-    square(vg,vh,vc,va,numTimesToSubdivide);
-    square(vg,vf,vc,vb,numTimesToSubdivide);
+    divideSquare();
 
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -162,15 +166,14 @@ window.onload = function init() {
     gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
     gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
 
-    render();
-}
 
+}
 var id;
 function render() {
 
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    eye = vec3(5,0, 13);
+    eye = vec3(5,0, 40);
 
     modelViewMatrix = lookAt(eye, at , up);
     var fovy = 30;
@@ -178,7 +181,17 @@ function render() {
 
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
-    id=requestAnimationFrame(render);
     for( var i=0; i<index; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 );
+
+    id=requestAnimationFrame(render);
+}
+
+function divideSquare(){
+    square(va, vb, vc, vd, numTimesToSubdivide);
+    square(ve,vf,vg,vh,numTimesToSubdivide);
+    square(ve,vf,vd,vb,numTimesToSubdivide);
+    square(ve,vh,vd,va,numTimesToSubdivide);
+    square(vg,vh,vc,va,numTimesToSubdivide);
+    square(vg,vf,vc,vb,numTimesToSubdivide);
 }
