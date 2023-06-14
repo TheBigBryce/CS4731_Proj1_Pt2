@@ -1,7 +1,7 @@
 var canvas;
 var gl;
 
-var numTimesToSubdivide = 0;
+var numTimesToSubdivide = 5;
 
 var index = 0;
 
@@ -14,17 +14,17 @@ var far = 100;
 
 
 //side 1
-var va = vec4(1.0, 1.0, 1.0,1);
-var vb = vec4(-1.0, -1.0, 1.0, 1);
-var vc = vec4(-1.0, 1.0, 1.0, 1);
-var vd = vec4(1.0, -1.0, 1.0, 1);
+var va = normalize(vec4(1.0, 1.0, 1.0,1));
+var vb = normalize(vec4(-1.0, -1.0, 1.0, 1));
+var vc = normalize(vec4(-1.0, 1.0, 1.0, 1));
+var vd = normalize(vec4(1.0, -1.0, 1.0, 1));
 //side 2
-var ve = vec4(1.0, -1.0, -1.0, 1);
-var vf = vec4(-1.0, -1.0, -1.0, 1);
-var vg = vec4(-1.0, 1.0, -1.0, 1);
-var vh = vec4(1.0, 1.0, -1.0, 1);
+var ve = normalize(vec4(1.0, -1.0, -1.0, 1));
+var vf = normalize(vec4(-1.0, -1.0, -1.0, 1));
+var vg = normalize(vec4(-1.0, 1.0, -1.0, 1));
+var vh = normalize(vec4(1.0, 1.0, -1.0, 1));
 
-var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
+var lightPosition = vec4(3.0, 1.0, 1.0, 0.0 );
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -64,18 +64,16 @@ function triangle(a, b, c) {
 }
 
 function onkeypress(event){
-
-    console.log("giga");
     if(event.key === "q"){
-        console.log("giga");
-        if(numTimesToSubdivide !== 0)
-            numTimesToSubdivide--
+        if(numTimesToSubdivide !== 0) {
+            console.log("tried");
+            numTimesToSubdivide-=1;
+        }
     }
     if(event.key==="e"){
         if(numTimesToSubdivide !== 5)
-            numTimesToSubdivide++
+            numTimesToSubdivide+=1;
     }
-    render();
 }
 
 
@@ -112,8 +110,8 @@ function square(a, b, c, d, n) {
 window.onload = function init() {
 
     canvas = document.getElementById( "gl-canvas" );
-    canvas.addEventListener('keydown',onkeypress);
-    gl = WebGLUtils.setupWebGL( canvas );
+    window.addEventListener('keypress',onkeypress,false);
+    gl = WebGLUtils.setupWebGL( canvas,undefined);
     if ( !gl ) { alert( "WebGL isn't available" ); }
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
@@ -167,12 +165,12 @@ window.onload = function init() {
     render();
 }
 
-
+var id;
 function render() {
 
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    eye = vec3(0,0, 20);
+    eye = vec3(5,0, 13);
 
     modelViewMatrix = lookAt(eye, at , up);
     var fovy = 30;
@@ -180,7 +178,7 @@ function render() {
 
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
-
+    id=requestAnimationFrame(render);
     for( var i=0; i<index; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 );
 }
