@@ -12,6 +12,10 @@ uniform vec4 diffuseProduct, specularProduct, ambientProduct;
 uniform vec4 lightPosition;
 uniform float shininess;
 
+uniform mat4 translate;
+
+uniform float b;
+
 attribute vec4 vPos;
 varying vec4 fColor;
 uniform float a;
@@ -32,14 +36,15 @@ void main()
 
     //Ambient
     vec4 ambient = ambientProduct;
-    if(a== 1.0){
-    gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+	if(a == 0.0){
+	gl_Position = projectionMatrix * modelViewMatrix * vPos;
+	fColor = vec4(1.0,1.0,1.0,1.0);
+	}
+	else{
+
+    gl_Position = projectionMatrix * modelViewMatrix * translate * vPosition;
 	fColor = diffuse + specular + ambient;
 	fColor.a = 1.0;
-	}
-	if(a == 0.0){
-	gl_Position = projectionMatrix * vPos;
-	fColor = vec4(1.0,1.0,1.0,1.0);
 	}
 
 }
