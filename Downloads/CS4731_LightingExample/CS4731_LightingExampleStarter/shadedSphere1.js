@@ -9,21 +9,24 @@ var index = 0;
 var pointsArray = [];
 var normalsArray = [];
 var flatShadingArray = [];
-let j = 1;
+let j = 0;
 let lastLocations = [];
 var near = .1;
 var far = 100;
 let animate = false;
+let nextX = 0;
+let nextY = 0;
+let nextZ = 0;
 
 let lineControlPoints = [
     vec4(0,0,0,1.0),
-    vec4(-2, 3, 1.0, 1.0),
-    vec4(10, 3, 1.0, 1.0),
-    vec4(16.5, -3, 1.0, 1.0),
-    vec4(8, -9, 1.0, 1.0),
-    vec4(14, -15, 1.0, 1.0),
-    vec4(0, -15, 1.0, 1.0),
-    vec4(-2, -8, 1.0, 1.0),
+    vec4(-2, 3, 0.0, 1.0),
+    vec4(10, 3, 0.0, 1.0),
+    vec4(16.5, -3, 0.0, 1.0),
+    vec4(8, -9, 0.0, 1.0),
+    vec4(14, -15, 0.0, 1.0),
+    vec4(0, -15, 0.0, 1.0),
+    vec4(-2, -8, 0.0, 1.0),
 ];
 
 //side 1
@@ -92,7 +95,11 @@ function onkeypress(event){
     if(event.key==="i"||event.key === "I"){
         if(numTimesToSubdivideCurve !== 8) {
             lastLocations[numTimesToSubdivideCurve]=j;
+           // j=j+(4*numTimesToSubdivideCurve*lineControlPoints.length);
             numTimesToSubdivideCurve += 1;
+            nextX=0;
+            nextY=0;
+            nextZ=0;
         }
     }
     if(event.key==="j"||event.key === "J"){
@@ -101,6 +108,10 @@ function onkeypress(event){
             if(j!==0) {
                 j=lastLocations[numTimesToSubdivideCurve];
             }
+
+            nextX=0;
+            nextY=0;
+            nextZ=0;
         }
     }
     pointsArray = [];
@@ -212,20 +223,35 @@ function setup(){
 
     let currentLine=linePoints[j];
     translateMat = translate(currentLine[0],currentLine[1],currentLine[2]);
-
+    let nextLine;
+    if(j===linePoints.length)
+        nextLine=linePoints[0];
+    else
+    nextLine=linePoints[j+1];
     if(animate){
-        if(j===linePoints.length){
-            j=0;
+        if(aboveOrBelow(nextLine,currentLine)) {
+            console.log("giga");
+            if (j === linePoints.length) {
+                j = 0;
+            } else {
+                ++j;
+            }
+            nextX=0;
+            nextY=0;
+            nextZ=0;
+            currentLine=linePoints[j];
+            if(j===linePoints.length)
+                nextLine=linePoints[0];
+            else
+                nextLine=linePoints[j+1];
         }
-        else{
-            j++;
-        }
-        id=requestAnimationFrame(setup);
-        let currentNormal = normalize(currentLine);
-        translateMat = translate(currentNormal[0],currentNormal[1],currentNormal[2]);
-        translateMat=translate(j,j,j);
-    }
+        distanceX = nextLine[0]-currentLine[0];
+        distanceY = nextLine[1]-currentLine[1];
 
+        nextX +=distanceX/100;
+        nextY +=distanceY/100;
+    }
+    translateMat = translate(currentLine[0] + nextX,currentLine[1]+ nextY,currentLine[2]);
     var vBuff = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuff);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(linePoints), gl.STATIC_DRAW);
@@ -242,7 +268,9 @@ function setup(){
     for( var i=0; i<index; i+=3) {
         gl.drawArrays(gl.TRIANGLES, i, 3);
     }
-
+    if(animate) {
+        id = requestAnimationFrame(setup);
+    }
 
 }
 
@@ -294,4 +322,22 @@ function chaikin(vertices, iterations) {
 
     // Recursively call to subdivide
     return chaikin(newVertices, iterations - 1);
+}
+
+function aboveOrBelow(nextLine, currentLine){
+
+    console.log(nextLine[0]>currentLine[0]);
+
+    if(nextLine[0]>=currentLine[0] && nextLine[1]>=currentLine[1]){
+        return (currentLine[0]+nextX >= nextLine[0] && currentLine[1]+nextY >=nextLine[1]);
+    }
+    if(nextLine[0]<=currentLine[0] && nextLine[1]>=currentLine){
+    return (currentLine[0]+nextX <= nextLine[0] && currentLine[1]+nextY >=nextLine[1]);
+    }
+    if(nextLine[0]>=currentLine[0] && nextLine[1]<=currentLine[1]){
+    return (currentLine[0]+nextX >= nextLine[0] && currentLine[1]+nextY <=nextLine[1]);
+    }
+    if(nextLine[0]<=currentLine[0] && nextLine[1]<=currentLine[1]){
+    return (currentLine[0]+nextX <= nextLine[0] && currentLine[1]+nextY <=nextLine[1]);
+    }
 }
