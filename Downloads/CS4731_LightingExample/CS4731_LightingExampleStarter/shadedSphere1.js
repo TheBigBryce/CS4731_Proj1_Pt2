@@ -2,6 +2,7 @@ var canvas;
 var gl;
 var program;
 
+let justChanged=true;
 var numTimesToSubdivide = 0;
 var numTimesToSubdivideCurve = 0;
 var translateMat = translate(0,0,0);
@@ -17,6 +18,10 @@ let animate = false;
 let nextX = 0;
 let nextY = 0;
 let nextZ = 0;
+
+let linePoints;
+
+let justChangedLine = true;
 
 let lineControlPoints = [
     vec4(0,0,0,1.0),
@@ -83,11 +88,15 @@ function onkeypress(event){
     if(event.key === "q" ||event.key === "Q"){
         if(numTimesToSubdivide !== 0) {
             numTimesToSubdivide-=1;
+            justChanged=true;
+
         }
     }
     if(event.key==="e"||event.key === "E"){
-        if(numTimesToSubdivide !== 5)
-            numTimesToSubdivide+=1;
+        if(numTimesToSubdivide !== 5) {
+            numTimesToSubdivide += 1;
+            justChanged=true;
+        }
     }
     if(event.key==="a"||event.key === "A"){
         animate = !animate;
@@ -96,6 +105,7 @@ function onkeypress(event){
         if(numTimesToSubdivideCurve !== 8) {
             lastLocations[numTimesToSubdivideCurve]=j;
            // j=j+(4*numTimesToSubdivideCurve*lineControlPoints.length);
+            justChangedLine=true;
             numTimesToSubdivideCurve += 1;
             nextX=0;
             nextY=0;
@@ -104,6 +114,7 @@ function onkeypress(event){
     }
     if(event.key==="j"||event.key === "J"){
         if(numTimesToSubdivideCurve !== 0) {
+            justChangedLine=true;
             numTimesToSubdivideCurve -= 1;
             if(j!==0) {
                 j=lastLocations[numTimesToSubdivideCurve];
@@ -174,7 +185,9 @@ function setup(){
     program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
 
-    divideSquare();
+    if(justChanged) {
+        divideSquare();
+    }
 
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -200,6 +213,7 @@ function setup(){
     var specularProduct = mult(lightSpecular, materialSpecular);
     var ambientProduct = mult(lightAmbient, materialAmbient);
 
+
     gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
     gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"), flatten(specularProduct));
     gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"), flatten(ambientProduct));
@@ -219,28 +233,28 @@ function setup(){
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
 
     gl.uniform1f(gl.getUniformLocation(program,"a"),0.0);
-    let linePoints =  chaikin(lineControlPoints, numTimesToSubdivideCurve);
-
+    if(justChangedLine) {
+        linePoints = chaikin(lineControlPoints, numTimesToSubdivideCurve);
+        justChangedLine=false;
+    }
     let currentLine=linePoints[j];
     translateMat = translate(currentLine[0],currentLine[1],currentLine[2]);
     let nextLine;
-    if(j===linePoints.length)
+    if(j===linePoints.length-1)
         nextLine=linePoints[0];
     else
     nextLine=linePoints[j+1];
     if(animate){
         if(aboveOrBelow(nextLine,currentLine)) {
-            console.log("giga");
+            ++j;
             if (j === linePoints.length) {
                 j = 0;
-            } else {
-                ++j;
             }
             nextX=0;
             nextY=0;
             nextZ=0;
             currentLine=linePoints[j];
-            if(j===linePoints.length)
+            if(j===linePoints.length-1)
                 nextLine=linePoints[0];
             else
                 nextLine=linePoints[j+1];
@@ -326,12 +340,10 @@ function chaikin(vertices, iterations) {
 
 function aboveOrBelow(nextLine, currentLine){
 
-    console.log(nextLine[0]>currentLine[0]);
-
     if(nextLine[0]>=currentLine[0] && nextLine[1]>=currentLine[1]){
         return (currentLine[0]+nextX >= nextLine[0] && currentLine[1]+nextY >=nextLine[1]);
     }
-    if(nextLine[0]<=currentLine[0] && nextLine[1]>=currentLine){
+    if(nextLine[0]<=currentLine[0] && nextLine[1]>=currentLine[1]){
     return (currentLine[0]+nextX <= nextLine[0] && currentLine[1]+nextY >=nextLine[1]);
     }
     if(nextLine[0]>=currentLine[0] && nextLine[1]<=currentLine[1]){
