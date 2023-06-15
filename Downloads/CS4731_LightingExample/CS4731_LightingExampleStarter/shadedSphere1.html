@@ -38,7 +38,7 @@ void main()
 	fColor.a = 1.0;
 	}
 	if(a == 0.0){
-	gl_Position = vPos;
+	gl_Position = projectionMatrix * vPos;
 	fColor = vec4(1.0,1.0,1.0,1.0);
 	}
 

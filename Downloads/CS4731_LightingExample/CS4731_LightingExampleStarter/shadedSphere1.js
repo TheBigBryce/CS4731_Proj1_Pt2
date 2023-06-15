@@ -5,7 +5,6 @@ var numTimesToSubdivide = 0;
 var numTimesToSubdivideCurve = 0;
 
 var index = 0;
-
 var pointsArray = [];
 var normalsArray = [];
 var flatShadingArray = [];
@@ -15,17 +14,16 @@ var far = 100;
 let animate = false;
 
 let lineControlPoints = [
+    vec4(0, 0, 1.0, 1.0),
     vec4(-0.75, -0.5, 0.0, 1.0),
-    vec4(-0.25, 0.5, 0.0, 1.0),
-    vec4(0.25, 0.5, 0.0, 1.0),
-    vec4(0.75, -0.5, 0.0, 1.0),
-    vec4(0.0, 0.0, 0.0, 1.0),
-    vec4(0.75, -0.2, 0.0, 1.0),
-    vec4(-0.75, -0.5, 0.0, 1.0)
-    // vec4(20, 20, 0.0, 1.0),
+    vec4(-0.25, 0.5, 1.0, 1.0),
+    vec4(0.25, 0.5, 1.0, 1.0),
+    vec4(0.75, -0.5, 1.0, 1.0),
+    vec4(1, 1, 0.0, 1.0),
+    //  vec4(20, 20, 0.0, 1.0),
+    //  vec4(10, 25, 0.0, 1.0),
+    //  vec4(0, 20, 0.0, 1.0),
     // vec4(10, 25, 0.0, 1.0),
-    // vec4(0, 20, 0.0, 1.0),
-    // vec4(10, 25, 0.0, 1.0)
 ];
 
 //side 1
@@ -191,12 +189,15 @@ function setup(){
     gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
     gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
 
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+
     gl.uniform1f(gl.getUniformLocation(program,"a"),1.0);
 
     render();
 
     gl.uniform1f(gl.getUniformLocation(program,"a"),0.0);
-    let linePoints = chaikin(lineControlPoints, numTimesToSubdivideCurve);
+    let linePoints =  chaikin(lineControlPoints, numTimesToSubdivideCurve);
 
     var vBuff = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuff);
@@ -209,13 +210,13 @@ function setup(){
     gl.drawArrays( gl.LINE_LOOP, 0, linePoints.length);
 
 
+
 }
-var id;
 function render() {
 
-   gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+   // gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    eye = vec3(10,0, 40);
+    eye = vec3(5,5, 40);
 
     modelViewMatrix = lookAt(eye, at , up);
     var fovy = 30;
@@ -226,7 +227,7 @@ function render() {
     for( var i=0; i<index; i+=3) {
         gl.drawArrays(gl.TRIANGLES, i, 3);
     }
-   // id=requestAnimationFrame(render);
+   //requestAnimationFrame(render);
 }
 
 function animateSquare(){
