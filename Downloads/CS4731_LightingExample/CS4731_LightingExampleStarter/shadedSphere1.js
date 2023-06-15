@@ -2,6 +2,7 @@ var canvas;
 var gl;
 
 var numTimesToSubdivide = 0;
+var numTimesToSubdivideCurve = 0;
 
 var index = 0;
 
@@ -11,7 +12,20 @@ var flatShadingArray = [];
 
 var near = .1;
 var far = 100;
+let animate = false;
 
+let lineControlPoints = [
+    vec4(-0.75, -0.5, 0.0, 1.0),
+    vec4(-0.25, 0.5, 0.0, 1.0),
+    vec4(0.25, 0.5, 0.0, 1.0),
+    vec4(0.75, -0.5, 0.0, 1.0),
+    vec4(0.0, 0.0, 0.0, 1.0),
+    vec4(20, 0.0, 0.0, 1.0),
+    vec4(20, 20, 0.0, 1.0),
+    vec4(10, 25, 0.0, 1.0),
+    vec4(0, 20, 0.0, 1.0),
+    vec4(10, 25, 0.0, 1.0)
+];
 
 //side 1
 var va = normalize(vec4(1.0, 1.0, 1.0,1));
@@ -38,7 +52,7 @@ var modelViewMatrix, projectionMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc;
 
 var eye;
-var at = vec3(0, 0, 0.0);
+var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
 
 function triangle(a, b, c) {
@@ -64,16 +78,26 @@ function triangle(a, b, c) {
 }
 
 function onkeypress(event){
-    if(event.key === "q"){
+    if(event.key === "q" ||event.key === "Q"){
         if(numTimesToSubdivide !== 0) {
             numTimesToSubdivide-=1;
         }
     }
-    if(event.key==="e"){
+    if(event.key==="e"||event.key === "E"){
         if(numTimesToSubdivide !== 5)
             numTimesToSubdivide+=1;
     }
-
+    if(event.key==="a"||event.key === "A"){
+        animate = !animate;
+    }
+    if(event.key==="i"||event.key === "I"){
+        if(numTimesToSubdivide !== 0)
+            numTimesToSubdivideCurve+=1;
+    }
+    if(event.key==="j"||event.key === "J"){
+        if(numTimesToSubdivide !== 8)
+            numTimesToSubdivideCurve+=1;
+    }
     pointsArray = [];
     normalsArray = [];
     flatShadingArray = [];
@@ -120,13 +144,11 @@ window.onload =
     if ( !gl ) { alert( "WebGL isn't available" ); }
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
-    gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
+    gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
 
     gl.enable(gl.DEPTH_TEST);
 
    setup();
-
-    render();
 }
 function setup(){
     //
@@ -160,13 +182,29 @@ function setup(){
     var specularProduct = mult(lightSpecular, materialSpecular);
     var ambientProduct = mult(lightAmbient, materialAmbient);
 
+
     gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
     gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"), flatten(specularProduct));
     gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"), flatten(ambientProduct));
     gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
     gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
+    gl.uniform1f(gl.getUniformLocation(program,"a"),0.0);
+
+    render();
+   // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.uniform1f(gl.getUniformLocation(program,"a"),1.0);
+    let linePoints = chaikin(lineControlPoints, numTimesToSubdivideCurve);
+
+    var vBuff = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vBuff);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(linePoints), gl.STATIC_DRAW);
+
+    var vPos = gl.getAttribLocation( program, "vPos");
+    gl.vertexAttribPointer(vPos, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPos);
 
 
+    gl.drawArrays( gl.LINE_STRIP, 0, linePoints.length);
 }
 var id;
 function render() {
@@ -181,9 +219,9 @@ function render() {
 
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
-    for( var i=0; i<index; i+=3)
-        gl.drawArrays( gl.TRIANGLES, i, 3 );
-
+    for( var i=0; i<index; i+=3) {
+        gl.drawArrays(gl.TRIANGLES, i, 3);
+    }
     id=requestAnimationFrame(render);
 }
 
@@ -194,4 +232,34 @@ function divideSquare(){
     square(ve,vh,vd,va,numTimesToSubdivide);
     square(vg,vh,vc,va,numTimesToSubdivide);
     square(vg,vf,vc,vb,numTimesToSubdivide);
+}
+
+function chaikin(vertices, iterations) {
+    // Recursive end condition
+    if (iterations === 0) {
+        return vertices;
+    }
+
+    // New vertices after corner-cutting
+    var newVertices = [];
+
+    // Constant corner cutting ratio of 1/4
+    var ratio = 0.25;
+
+    for (let i = 0; i < vertices.length - 1; i++) {
+        // Get starting and ending vertices of line segment to cut
+        var v0 = vertices[i];
+        var v1 = vertices[i + 1];
+
+        // Cut vertices and add to list
+        // Calculate first new point
+        var p0 = mix(v0, v1, ratio);
+
+        // Calculate second new point
+        var p1 = mix(v0, v1, (1.0 - ratio));
+        newVertices.push(p0, p1);
+    }
+
+    // Recursively call to subdivide
+    return chaikin(newVertices, iterations - 1);
 }
