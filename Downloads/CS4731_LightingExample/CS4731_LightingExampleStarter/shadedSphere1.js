@@ -20,11 +20,12 @@ let lineControlPoints = [
     vec4(0.25, 0.5, 0.0, 1.0),
     vec4(0.75, -0.5, 0.0, 1.0),
     vec4(0.0, 0.0, 0.0, 1.0),
-    vec4(20, 0.0, 0.0, 1.0),
-    vec4(20, 20, 0.0, 1.0),
-    vec4(10, 25, 0.0, 1.0),
-    vec4(0, 20, 0.0, 1.0),
-    vec4(10, 25, 0.0, 1.0)
+    vec4(0.75, -0.2, 0.0, 1.0),
+    vec4(-0.75, -0.5, 0.0, 1.0)
+    // vec4(20, 20, 0.0, 1.0),
+    // vec4(10, 25, 0.0, 1.0),
+    // vec4(0, 20, 0.0, 1.0),
+    // vec4(10, 25, 0.0, 1.0)
 ];
 
 //side 1
@@ -91,12 +92,13 @@ function onkeypress(event){
         animate = !animate;
     }
     if(event.key==="i"||event.key === "I"){
-        if(numTimesToSubdivide !== 0)
+        if(numTimesToSubdivideCurve !== 8)
             numTimesToSubdivideCurve+=1;
     }
     if(event.key==="j"||event.key === "J"){
-        if(numTimesToSubdivide !== 8)
-            numTimesToSubdivideCurve+=1;
+        if(numTimesToSubdivideCurve !== 0)
+            numTimesToSubdivideCurve= numTimesToSubdivideCurve-1;
+        console.log(numTimesToSubdivideCurve);
     }
     pointsArray = [];
     normalsArray = [];
@@ -188,11 +190,12 @@ function setup(){
     gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"), flatten(ambientProduct));
     gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
     gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
-    gl.uniform1f(gl.getUniformLocation(program,"a"),0.0);
+
+    gl.uniform1f(gl.getUniformLocation(program,"a"),1.0);
 
     render();
-   // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.uniform1f(gl.getUniformLocation(program,"a"),1.0);
+
+    gl.uniform1f(gl.getUniformLocation(program,"a"),0.0);
     let linePoints = chaikin(lineControlPoints, numTimesToSubdivideCurve);
 
     var vBuff = gl.createBuffer();
@@ -203,15 +206,16 @@ function setup(){
     gl.vertexAttribPointer(vPos, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPos);
 
+    gl.drawArrays( gl.LINE_LOOP, 0, linePoints.length);
 
-    gl.drawArrays( gl.LINE_STRIP, 0, linePoints.length);
+
 }
 var id;
 function render() {
 
-    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+   gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    eye = vec3(5,0, 40);
+    eye = vec3(10,0, 40);
 
     modelViewMatrix = lookAt(eye, at , up);
     var fovy = 30;
@@ -222,7 +226,13 @@ function render() {
     for( var i=0; i<index; i+=3) {
         gl.drawArrays(gl.TRIANGLES, i, 3);
     }
-    id=requestAnimationFrame(render);
+   // id=requestAnimationFrame(render);
+}
+
+function animateSquare(){
+    if(animate()){
+
+    }
 }
 
 function divideSquare(){
@@ -259,6 +269,16 @@ function chaikin(vertices, iterations) {
         var p1 = mix(v0, v1, (1.0 - ratio));
         newVertices.push(p0, p1);
     }
+    var v0 = vertices[0];
+    var v1 = vertices[vertices.length - 1];
+
+    // Cut vertices and add to list
+    // Calculate first new point
+    var p0 = mix(v0, v1, ratio);
+
+    // Calculate second new point
+    var p1 = mix(v0, v1, (1.0 - ratio));
+    newVertices.push(p0, p1);
 
     // Recursively call to subdivide
     return chaikin(newVertices, iterations - 1);
