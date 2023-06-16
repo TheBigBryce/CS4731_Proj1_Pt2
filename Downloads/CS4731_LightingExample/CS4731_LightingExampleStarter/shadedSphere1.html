@@ -5,21 +5,19 @@
 
 // assume both position and normal are in homogeneous form
 
-attribute vec4 vPosition, vNormal, flatShading;
+attribute vec4 vPosition, flatShading;
+attribute vec4 vNormal;
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
-uniform vec4 diffuseProduct, specularProduct, ambientProduct;
 uniform vec4 lightPosition;
-uniform float shininess;
 
 uniform mat4 translate;
 
 uniform float b;
 
 attribute vec4 vPos;
-varying vec4 fColor;
-uniform float a;
-
+uniform float drawFlag;
+varying vec3 L,N,V;
 
 void main()
 {
@@ -27,24 +25,13 @@ void main()
     vec3 pos = (modelViewMatrix * flatShading).xyz;
     vec3 N = normalize(modelViewMatrix * vNormal).xyz;
     vec3 L = normalize(lightPosition.xyz - pos);
-    vec4 diffuse = diffuseProduct * dot(L, N);
-
     //Specular
     vec3 V =  normalize(-pos);
-    vec3 R = (2.0 * dot(L, N) * N) - L;
-    vec4 specular = specularProduct * pow(max(dot(V, R), 0.0), shininess);
-
-    //Ambient
-    vec4 ambient = ambientProduct;
-	if(a == 0.0){
+	if(drawFlag == 0.0){
 	gl_Position = projectionMatrix * modelViewMatrix * vPos;
-	fColor = vec4(1.0,1.0,1.0,1.0);
 	}
 	else{
-
     gl_Position = projectionMatrix * modelViewMatrix * translate * vPosition;
-	fColor = diffuse + specular + ambient;
-	fColor.a = 1.0;
 	}
 
 }
@@ -54,12 +41,34 @@ void main()
 
 precision mediump float;
 
-varying vec4 fColor;
+uniform vec4 diffuseProduct, specularProduct, ambientProduct;
+
+uniform float shininess;
+uniform float drawFlag2;
+varying vec3 L,N,V;
 
 void main()
 {
+    vec4 fColor;
+    if(drawFlag2 == 1.0){
+    vec4 diffuse = diffuseProduct * dot(L, N);
+    vec3 R = (2.0 * dot(L, N) * N) - L;
+    vec4 specular = specularProduct * pow(max(dot(V, R), 0.0), shininess);
 
+    //Ambient
+    vec4 ambient = ambientProduct;
+
+	 fColor = diffuse + specular + ambient;
+	fColor.a = 1.0;
     gl_FragColor = fColor;
+    }
+    else{
+     fColor = vec4(1.0,1.0,1.0,1.0);
+    gl_FragColor = fColor;
+    }
+
+
+
 
 }
 </script>
@@ -72,7 +81,6 @@ void main()
 
 <body>
 <canvas id="gl-canvas" width="512" height="512">
-Epic fail!
 </canvas>
 </body>
 </html>

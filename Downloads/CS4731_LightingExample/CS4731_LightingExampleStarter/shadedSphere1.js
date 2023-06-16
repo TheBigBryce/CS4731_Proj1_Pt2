@@ -7,18 +7,17 @@ var numTimesToSubdivide = 0;
 var numTimesToSubdivideCurve = 0;
 var translateMat = translate(0,0,0);
 var index = 0;
+
 var pointsArray = [];
 var normalsArray = [];
-var flatShadingArray = [];
-let j = 0;
+
+let lineNum = 0;
 let lastLocations = [];
 var near = .1;
 var far = 100;
 let animate = false;
 let nextX = 0;
 let nextY = 0;
-let nextZ = 0;
-
 let linePoints;
 
 let justChangedLine = true;
@@ -45,6 +44,7 @@ var vf = normalize(vec4(-.5, -.5, -.5, 1))
 var vg = normalize(vec4(-.5, .5, -.5, 1));
 var vh = normalize(vec4(.5, .5, -.5, 1));
 
+
 var lightPosition = vec4(3.0, 1.0, 1.0, 0.0 );
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -70,15 +70,11 @@ function triangle(a, b, c) {
     pointsArray.push(b);
     pointsArray.push(c);
 
-    flatShadingArray.push(a);
-    flatShadingArray.push(a);
-    flatShadingArray.push(a);
-
     // normals are vectors
 
     normalsArray.push(a[0],a[1], a[2], 0.0);
-    normalsArray.push(a[0],a[1], a[2], 0.0);
-    normalsArray.push(a[0],a[1], a[2], 0.0);
+    normalsArray.push(b[0],b[1], b[2], 0.0);
+    normalsArray.push(c[0],c[1], c[2], 0.0);
 
     index += 3;
 
@@ -103,32 +99,28 @@ function onkeypress(event){
     }
     if(event.key==="i"||event.key === "I"){
         if(numTimesToSubdivideCurve !== 8) {
-            lastLocations[numTimesToSubdivideCurve]=j;
-           // j=j+(4*numTimesToSubdivideCurve*lineControlPoints.length);
+            lastLocations[numTimesToSubdivideCurve]=lineNum;
+            // lineNum=lineNum+(4*numTimesToSubdivideCurve*lineControlPoints.length);
             justChangedLine=true;
             numTimesToSubdivideCurve += 1;
             nextX=0;
             nextY=0;
-            nextZ=0;
         }
     }
     if(event.key==="j"||event.key === "J"){
         if(numTimesToSubdivideCurve !== 0) {
             justChangedLine=true;
             numTimesToSubdivideCurve -= 1;
-            if(j!==0) {
-                j=lastLocations[numTimesToSubdivideCurve];
+            if(lineNum!==0) {
+                lineNum=lastLocations[numTimesToSubdivideCurve];
             }
 
             nextX=0;
             nextY=0;
-            nextZ=0;
         }
     }
-    pointsArray = [];
-    normalsArray = [];
-    flatShadingArray = [];
-    setup();
+
+  setup();
 }
 
 
@@ -175,19 +167,22 @@ window.onload =
 
         gl.enable(gl.DEPTH_TEST);
 
+        // gl.enable(gl.CULL_FACE);
+        // gl.cullFace(gl.BACK);
         setup();
     }
-    var id;
+var id;
 function setup(){
     //
     //  Load shaders and initialize attribute buffers
     //
-    program = initShaders( gl, "vertex-shader", "fragment-shader" );
-    gl.useProgram( program );
 
-    if(justChanged) {
-        divideSquare();
-    }
+    pointsArray = [];
+    normalsArray = [];
+    program = initShaders( gl, "vertex-shader", "fragment-shader" );
+    gl.useProgram( program )
+
+    divideSquare();
 
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -198,13 +193,7 @@ function setup(){
     gl.enableVertexAttribArray(vPosition);
 
 
-    var vNormal = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
 
-    var vNormalPosition = gl.getAttribLocation( program, "vNormal");
-    gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vNormalPosition);
 
     modelViewMatrixLoc = gl.getUniformLocation( program, "modelViewMatrix" );
     projectionMatrixLoc = gl.getUniformLocation( program, "projectionMatrix" );
@@ -220,51 +209,61 @@ function setup(){
     gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
     gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
 
-    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    var vNormal = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
+
+    var vNormalPosition = gl.getAttribLocation( program, "vNormal");
+    gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vNormalPosition);
 
     eye = vec3(7,-7, 40);
 
     modelViewMatrix = lookAt(eye, at , up);
     var fovy = 30;
     projectionMatrix = perspective(fovy,1,near,far);
-
+    console.log(pointsArray.length);
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
 
-    gl.uniform1f(gl.getUniformLocation(program,"a"),0.0);
+    gl.uniform1f(gl.getUniformLocation(program,"drawFlag"),0.0);
+    gl.uniform1f(gl.getUniformLocation(program,"drawFlag2"),0.0);
+
     if(justChangedLine) {
         linePoints = chaikin(lineControlPoints, numTimesToSubdivideCurve);
         justChangedLine=false;
     }
-    let currentLine=linePoints[j];
-    translateMat = translate(currentLine[0],currentLine[1],currentLine[2]);
+    let currentLine=linePoints[lineNum];
     let nextLine;
-    if(j===linePoints.length-1)
+    if(lineNum===linePoints.length-1)
         nextLine=linePoints[0];
     else
-    nextLine=linePoints[j+1];
+        nextLine=linePoints[lineNum+1];
     if(animate){
-        if(aboveOrBelow(nextLine,currentLine)) {
-            ++j;
-            if (j === linePoints.length) {
-                j = 0;
+        if(aboveOrBelow(nextLine,currentLine,currentLine[0]+nextX,currentLine[1]+nextY)) {
+            ++lineNum;
+            if (lineNum === linePoints.length) {
+                lineNum = 0;
             }
             nextX=0;
             nextY=0;
-            nextZ=0;
-            currentLine=linePoints[j];
-            if(j===linePoints.length-1)
+            currentLine=linePoints[lineNum];
+            if(lineNum===linePoints.length-1)
                 nextLine=linePoints[0];
             else
-                nextLine=linePoints[j+1];
+                nextLine=linePoints[lineNum+1];
         }
-        distanceX = nextLine[0]-currentLine[0];
-        distanceY = nextLine[1]-currentLine[1];
-
-        nextX +=distanceX/100;
-        nextY +=distanceY/100;
+        let distanceX = nextLine[0]-currentLine[0];
+         let distanceY = nextLine[1]-currentLine[1];
+        let numDivide=(numTimesToSubdivideCurve+1)/15;
+        nextX +=distanceX*(numDivide);
+        nextY +=distanceY*(numDivide);
     }
+    else{
+        translateMat = translate(currentLine[0],currentLine[1],currentLine[2]);
+    }
+
     translateMat = translate(currentLine[0] + nextX,currentLine[1]+ nextY,currentLine[2]);
     var vBuff = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuff);
@@ -274,16 +273,18 @@ function setup(){
     gl.vertexAttribPointer(vPos, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPos);
 
-    gl.drawArrays( gl.LINE_LOOP, 0, linePoints.length);
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.drawArrays(gl.LINE_LOOP, 0, linePoints.length);
+    gl.uniform1f(gl.getUniformLocation(program,"drawFlag"),1.0);
+    gl.uniform1f(gl.getUniformLocation(program,"drawFlag2"),1.0);
 
-    gl.uniform1f(gl.getUniformLocation(program,"a"),1.0);
     var ctMatrixLoc = gl.getUniformLocation(program, "translate");
     gl.uniformMatrix4fv(ctMatrixLoc, false, flatten(translateMat));
     for( var i=0; i<index; i+=3) {
         gl.drawArrays(gl.TRIANGLES, i, 3);
     }
     if(animate) {
-        id = requestAnimationFrame(setup);
+        //id = requestAnimationFrame(setup);
     }
 
 }
@@ -338,18 +339,22 @@ function chaikin(vertices, iterations) {
     return chaikin(newVertices, iterations - 1);
 }
 
-function aboveOrBelow(nextLine, currentLine){
+function aboveOrBelow(nextLine, currentLine, currentXPos,currentYPos){
+    let nextLineX = nextLine[0];
+    let nextLineY = nextLine[1];
+    let currentLineX= currentLine[0];
+    let currentLineY= currentLine[1];
 
-    if(nextLine[0]>=currentLine[0] && nextLine[1]>=currentLine[1]){
-        return (currentLine[0]+nextX >= nextLine[0] && currentLine[1]+nextY >=nextLine[1]);
+    if(nextLineX>=currentLineX && nextLineY>=currentLineY){
+        return (currentXPos >= nextLineX && currentYPos >=nextLineY);
     }
-    if(nextLine[0]<=currentLine[0] && nextLine[1]>=currentLine[1]){
-    return (currentLine[0]+nextX <= nextLine[0] && currentLine[1]+nextY >=nextLine[1]);
+    else if(nextLineX<=currentLineX && nextLineY>=currentLineY){
+        return (currentXPos<= nextLineX && currentYPos >=nextLineY);
     }
-    if(nextLine[0]>=currentLine[0] && nextLine[1]<=currentLine[1]){
-    return (currentLine[0]+nextX >= nextLine[0] && currentLine[1]+nextY <=nextLine[1]);
+    else if(nextLineX>=currentLineX && nextLineY<=currentLineY){
+        return (currentXPos>= nextLineX && currentYPos <=nextLineY);
     }
-    if(nextLine[0]<=currentLine[0] && nextLine[1]<=currentLine[1]){
-    return (currentLine[0]+nextX <= nextLine[0] && currentLine[1]+nextY <=nextLine[1]);
+    else if(nextLineX<=currentLineX && nextLineY<=currentLineY){
+        return (currentXPos<= nextLineX && currentYPos <=nextLineY);
     }
 }

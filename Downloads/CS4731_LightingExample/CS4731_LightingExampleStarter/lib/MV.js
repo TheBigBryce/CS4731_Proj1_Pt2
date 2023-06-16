@@ -169,8 +169,8 @@ function equal( u, v )
     if ( u.matrix && v.matrix ) {
         for ( var i = 0; i < u.length; ++i ) {
             if ( u[i].length != v[i].length ) { return false; }
-            for ( var j = 0; j < u[i].length; ++j ) {
-                if ( u[i][j] !== v[i][j] ) { return false; }
+            for ( var lineNum = 0; lineNum < u[i].length; ++lineNum ) {
+                if ( u[i][lineNum] !== v[i][lineNum] ) { return false; }
             }
         }
     }
@@ -202,8 +202,8 @@ function add( u, v )
                 throw "add(): trying to add matrices of different dimensions";
             }
             result.push( [] );
-            for ( var j = 0; j < u[i].length; ++j ) {
-                result[i].push( u[i][j] + v[i][j] );
+            for ( var lineNum = 0; lineNum < u[i].length; ++lineNum ) {
+                result[i].push( u[i][lineNum] + v[i][lineNum] );
             }
         }
 
@@ -245,8 +245,8 @@ function subtract( u, v )
                     " of different dimensions";
             }
             result.push( [] );
-            for ( var j = 0; j < u[i].length; ++j ) {
-                result[i].push( u[i][j] - v[i][j] );
+            for ( var lineNum = 0; lineNum < u[i].length; ++lineNum ) {
+                result[i].push( u[i][lineNum] - v[i][lineNum] );
             }
         }
 
@@ -290,10 +290,10 @@ function mult( u, v )
         for ( var i = 0; i < u.length; ++i ) {
             result.push( [] );
 
-            for ( var j = 0; j < v.length; ++j ) {
+            for ( var lineNum = 0; lineNum < v.length; ++lineNum ) {
                 var sum = 0.0;
                 for ( var k = 0; k < u.length; ++k ) {
-                    sum += u[i][k] * v[k][j];
+                    sum += u[i][k] * v[k][lineNum];
                 }
                 result[i].push( sum );
             }
@@ -307,8 +307,8 @@ function mult( u, v )
       if(u.matrix&& (u.length == v.length)) {
         for(var i = 0; i<v.length; i++) {
           var sum = 0.0;
-          for(var j=0; j<v.length; j++) {
-            sum += u[i][j]*v[j];
+          for(var lineNum=0; lineNum<v.length; lineNum++) {
+            sum += u[i][lineNum]*v[lineNum];
           }
           result.push(sum);
         }
@@ -523,8 +523,8 @@ function transpose( m )
     var result = [];
     for ( var i = 0; i < m.length; ++i ) {
         result.push( [] );
-        for ( var j = 0; j < m[i].length; ++j ) {
-            result[i].push( m[j][i] );
+        for ( var lineNum = 0; lineNum < m[i].length; ++lineNum ) {
+            result[i].push( m[lineNum][i] );
         }
     }
 
@@ -680,8 +680,8 @@ function flatten( v )
     if ( elemsAreArrays ) {
         var idx = 0;
         for ( var i = 0; i < v.length; ++i ) {
-            for ( var j = 0; j < v[i].length; ++j ) {
-                floats[idx++] = v[i][j];
+            for ( var lineNum = 0; lineNum < v[i].length; ++lineNum ) {
+                floats[idx++] = v[i][lineNum];
             }
         }
     }
@@ -972,7 +972,7 @@ function normalMatrix(m, flag)
     if(flag != true) return a;
     else {
     var b = mat3();
-    for(var i=0;i<3;i++) for(var j=0; j<3; j++) b[i][j] = a[i][j];
+    for(var i=0;i<3;i++) for(var lineNum=0; lineNum<3; lineNum++) b[i][lineNum] = a[i][lineNum];
     return b;
     }
 
