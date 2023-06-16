@@ -22,7 +22,7 @@ varying vec3 L,N,V;
 void main()
 {
     //Diffuse
-    vec3 pos = (modelViewMatrix * flatShading).xyz;
+    vec3 pos = (modelViewMatrix * vPosition).xyz;
     vec3 N = normalize(modelViewMatrix * vNormal).xyz;
     vec3 L = normalize(lightPosition.xyz - pos);
     //Specular
